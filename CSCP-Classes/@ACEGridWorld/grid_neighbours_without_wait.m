@@ -38,4 +38,33 @@ function [nhbrIDs, nhbrCosts] = grid_neighbours_without_wait(obj, currentID)
 nhbrIDs		= [];
 nhbrCosts	= [];
 
+
+% ID = number of spatial grid points * time samples elapsed + ID of current
+% grid point
+
+pointInGrid = []
+pointinTime = []
+
+if mod( pointInGrid, obj.nGridRow )
+	% pointInGrid + 1 is a neighbour
+	newNeighbour= pointInGrid + obj.nPoints * pointinTime;
+	nhbrIDs		= [nhbrIDs; newNeighbour];
+end
+if mod( pointInGrid - 1, obj.nGridRow )
+	% pointInGrid - 1 is a neighbour
+	nhbrIDs		= [nhbrIDs; newNeighbour];
+	
+end
+
+if pointInGrid + obj.nGridRow <= obj.nPoints
+	% pointInGrid + obj.nGridRow is a neighbour
+	nhbrIDs		= [nhbrIDs; newNeighbour];
+end
+
+if pointInGrid + obj.nGridRow >= 1
+	% pointInGrid - obj.nGridRow is a neighbour
+	nhbrIDs		= [nhbrIDs; newNeighbour];
+end
+
+
 end
