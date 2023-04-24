@@ -96,15 +96,15 @@ while (1)
     threatStateHat_k = threat_.stateEstimate;
 	
     %----- Find optimal plan
-	grid_			= grid_.plan_path(threat_);
-	planState_k		= grid_.optimalPath;
-	planCostRisk_k	= [grid_.pathCost; grid_.pathRisk];
+% 	grid_			= grid_.plan_path(threat_);
+% 	planState_k		= grid_.optimalPath;
+% 	planCostRisk_k	= [grid_.pathCost; grid_.pathRisk];
 
 	%----- Store results of this iteration
 	timeStampMeas(:, k)		= time_k;
 	measurementz(:, k)		= measurementz_k;
-	planState(:, k)			= planState_k;
-	planCostRisk(:, k)		= planCostRisk_k;
+% 	planState(:, k)			= planState_k;
+% 	planCostRisk(:, k)		= planCostRisk_k;
    
     %----- Run estimator
 % 	threat_			 = threat_.estimate_state_UKF1(time_step_, sensor_);
