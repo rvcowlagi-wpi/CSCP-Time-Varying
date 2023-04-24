@@ -51,7 +51,7 @@ N_GRID_ROW		= 5;
 
 %----- Other
 N_EXP_ITER		= 1;	% Ballpark of how many CSCP iterations may be needed
-N_MAX_ITER		= 1;	% Terminate if this is exceeded
+N_MAX_ITER		= 10;	% Terminate if this is exceeded
 TERM_PLAN_RISK	= 0.1;	% Risk threshold for terminating CSCP iterations
 SENSOR_NOISE_VAR= 0.1;	% Variance of (i.i.d.) measurement noise in each sensor, assuming homogeneous sensors
 
@@ -115,12 +115,12 @@ end
 
 %% Plot results
 
-flags_.SHOW_TRUE	 = true;
-flags_.SHOW_ESTIMATE = true;
-threatStatePlotAxes  = threat_.plot_(flags_);
+% flags_.SHOW_TRUE	 = true;
+% flags_.SHOW_ESTIMATE = true;
+% threatStatePlotAxes  = threat_.plot_(flags_);
 
 
-% flags_.SHOW_TRUE	= true;
-% flags_.SHOW_ESTIMATE= false;
-% flags_.JUXTAPOSE	= true;
-% grid_.plot_(threat_, sensor_, flags_)
+flags_.SHOW_TRUE	= true;
+flags_.SHOW_ESTIMATE= false;
+flags_.JUXTAPOSE	= true;
+grid_.plot_parametric(threat_, sensor_, flags_)

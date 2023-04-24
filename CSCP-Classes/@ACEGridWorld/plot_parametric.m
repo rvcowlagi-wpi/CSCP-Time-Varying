@@ -49,13 +49,18 @@ if flags_.SHOW_TRUE
 		'FontSize', 12, 'Interpreter','latex');
 	drawnow();
 
-	for m1 = 1:length(threat_.timeStampState)
+	for m1 = 2:length(threat_.timeStampState)
 		delete(grHdlSurf);
 		delete(grHdlTimeText);
 
 		threatMesh	= threat_.calculate_at_locations(...
 			locationsMesh, threat_.stateHistory(:, m1));
 		surfc(axisTrue, xMesh, yMesh, threatMesh,'LineStyle','none');
+		hold on;
+
+		plot3(threat_.basisCenter(1, :), threat_.basisCenter(2, :), ...
+			imageMax*ones(1, size(threat_.basisCenter, 2)), ...
+			'.', 'Color', 'w', 'MarkerSize', 30);		
 
 		timeText = ['$t = $ ' num2str(threat_.timeStampState(m1)) ' units'];
 		grHdlTimeText	= text(axisTrue, ...
