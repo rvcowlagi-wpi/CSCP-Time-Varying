@@ -46,8 +46,8 @@ k		= 0;	% Iteration counter
 
 %----- Problem dimensions
 N_THREAT_STATE	= 9;			
-N_SENSORS		= 1;
-N_GRID_ROW		= 5;
+N_SENSORS		= 2;
+N_GRID_ROW		= 10;
 
 %----- Other
 N_EXP_ITER		= 1;	% Ballpark of how many CSCP iterations may be needed
