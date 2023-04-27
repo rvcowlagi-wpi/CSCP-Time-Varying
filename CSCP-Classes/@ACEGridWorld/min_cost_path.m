@@ -35,14 +35,8 @@ neighbours and assigns vertex numbers as they are discovered.
 function obj = min_cost_path(obj)
 
 
-%------ Search settings
-isAllGoalSearch	= obj.searchSetup.reachAllGoals;
+%------ Initialization
 idStart			= obj.searchSetup.start;
-idGoal			= obj.searchSetup.goal;
-
-%------ Cost, heuristic, and neighbour functions
-% fcn_heuristic	= obj.searchHeuristicFcn;
-fcn_nhbr		= obj.neighbourFcn;
 
 nVertices		= 1E3;														% For large graphs, initialize search data structure with arbitrary size
 knownVertices	= zeros(nVertices, 1);									
@@ -54,14 +48,15 @@ knownVertices	= zeros(nVertices, 1);
 % difference from a typical Dijkstra implementation is that the vertex ID
 % (which can be large) need not match this algorithm's internal indexing,
 % which is helpful when the #vertices searched << total number of verices.
-tmp				= struct('id', 0, 'mk', 0, 'd', Inf, 'b', [], 'x', []);
-vertexData		= repmat(tmp, 1, nVertices);
+obj.searchOutcome		= [];
+tmp	= struct('id', 0, 'mk', 0, 'd', Inf, 'b', [], 'x', []);
+obj.searchOutcome		= repmat(tmp, 1, nVertices);
 
 % ID 'id' and state 'x' are redundant; 'ID' is scalar
 
-vertexData(1).id= idStart;
-vertexData(1).mk= 1;
-vertexData(1).d	= 0;
+obj.searchOutcome(1).id	= idStart;
+obj.searchOutcome(1).mk = 1;
+obj.searchOutcome(1).d	= 0;
 
 nKnownVertices	= 1;
 knownVertices(1)= idStart;
@@ -80,12 +75,12 @@ while (nFringe ~= 0) && (~isGoalClosed)
 	
 	nIter		= nIter + 1;
 	vCurrent	= fringe_(1, 1);											% Get vertex from top of (sorted) open stack
-	vertexData(vCurrent).mk = 2;											% Mark that vertex as dead
+	obj.searchOutcome(vCurrent).mk = 2;											% Mark that vertex as dead
 	
 	nFringe		= nFringe - 1;
 	fringe_(1, :) = [];	
 														
-	[nhbrIDs, nhbrCosts] = fcn_nhbr(vertexData(vCurrent).id);				% Other function handle for nhbrs and costs
+	[nhbrIDs, nhbrCosts] = obj.searchSetup.find_neighbours(obj.searchOutcome(vCurrent).id);				% Other function handle for nhbrs and costs
 	
 	for k = 1:numel(nhbrIDs)													% For all neighbours
 
@@ -95,8 +90,8 @@ while (nFringe ~= 0) && (~isGoalClosed)
 			vNew		= vneighbour;
 		else
 			vNew		= nKnownVertices + 1;
-			vertexData(vNew).id	= nhbrIDs(k);
-			vertexData(vNew).mk	= 0;
+			obj.searchOutcome(vNew).id	= nhbrIDs(k);
+			obj.searchOutcome(vNew).mk	= 0;
 			
 			nKnownVertices		= vNew;
 			knownVertices(vNew)	= nhbrIDs(k);	
@@ -105,42 +100,26 @@ while (nFringe ~= 0) && (~isGoalClosed)
 		
 % 		[v_current v_new cost_new]
 		
-		if vertexData(vNew).mk == 0											% Unvisited
-			vertexData(vNew).mk	= 1;										% Mark open
-			vertexData(vNew).d	= vertexData(vCurrent).d + costNew;			% Update c2come of newly visited state
-			vertexData(vNew).b	= vCurrent;			
+		if obj.searchOutcome(vNew).mk == 0											% Unvisited
+			obj.searchOutcome(vNew).mk	= 1;										% Mark open
+			obj.searchOutcome(vNew).d	= obj.searchOutcome(vCurrent).d + costNew;			% Update c2come of newly visited state
+			obj.searchOutcome(vNew).b	= vCurrent;			
 
-			fringe_binary_sort([vNew vertexData(vNew).d]);					% Add [vertexNew cost] to sorted open list
-		elseif vertexData(vNew).mk == 1										% Already open, update c2come if necessary
-			if vertexData(vNew).d > vertexData(vCurrent).d + costNew
-				vertexData(vNew).d	= vertexData(vCurrent).d + costNew;
-				vertexData(vNew).b	= vCurrent;
+			fringe_binary_sort([vNew obj.searchOutcome(vNew).d]);					% Add [vertexNew cost] to sorted open list
+		elseif obj.searchOutcome(vNew).mk == 1										% Already open, update c2come if necessary
+			if obj.searchOutcome(vNew).d > obj.searchOutcome(vCurrent).d + costNew
+				obj.searchOutcome(vNew).d	= obj.searchOutcome(vCurrent).d + costNew;
+				obj.searchOutcome(vNew).b	= vCurrent;
 				
 				fringe_( (fringe_(1:nFringe, 1) == vNew), :) = [];
 				nFringe	= nFringe - 1;
 				
-				fringe_binary_sort([vNew vertexData(vNew).d]);				% Add [vertexNew cost] to sorted open list
+				fringe_binary_sort([vNew obj.searchOutcome(vNew).d]);				% Add [vertexNew cost] to sorted open list
 			end
 		end
 	end
 	
-
-	if ~isAllGoalSearch
-		for k = 1:numel(idGoal)
-			isGoalKnown		= (idGoal(k) == knownVertices);
-			if any(isGoalKnown) && vertexData(isGoalKnown).mk == 2
-				isGoalClosed = 1;
-				break;
-			end
-		end
-	else			
-% 		if ~all(ismember(idGoal, knownVertices)), continue; end
-% 		isGoalClosed = 1;
-% 		for k = 1:numel(idGoal)
-% 			[~, idx_goal] = ismember(idGoal(k), knownVertices);
-% 			if vertexData(idx_goal).mk == 2, isGoalClosed = 0; break; end
-% 		end
-	end
+	isGoalClosed = obj.searchSetup.goal_check();
 
 end
 

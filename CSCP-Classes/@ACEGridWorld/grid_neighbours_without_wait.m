@@ -39,8 +39,8 @@ nhbrIDs		= [];
 nhbrCosts	= [];
 
 
-% ID = number of spatial grid points * time samples elapsed + ID of current
-% grid point
+% ID = number of spatial grid points * time samples elapsed + current grid
+% point number
 
 pointInGrid = mod(currentID, obj.nPoints);
 if pointInGrid == 0, pointInGrid = obj.nPoints; end
@@ -49,25 +49,32 @@ pointinTime = floor(currentID / obj.nPoints );
 if mod( pointInGrid, obj.nGridRow )
 	% pointInGrid + 1 is a neighbour
 	newNeighbour= (pointInGrid + 1) + obj.nPoints * (pointinTime + 1);
+	newCost		= 1;
 	nhbrIDs		= [nhbrIDs; newNeighbour];
+	nhbrCosts	= [nhbrCosts; newCost];
 end
 if mod( pointInGrid - 1, obj.nGridRow )
 	% pointInGrid - 1 is a neighbour
 	newNeighbour= (pointInGrid - 1) + obj.nPoints * (pointinTime + 1);
+	newCost		= 1;
 	nhbrIDs		= [nhbrIDs; newNeighbour];
-	
+	nhbrCosts	= [nhbrCosts; newCost];
 end
 
 if pointInGrid + obj.nGridRow <= obj.nPoints
 	% pointInGrid + obj.nGridRow is a neighbour
 	newNeighbour= (pointInGrid + obj.nGridRow) + obj.nPoints * (pointinTime + 1);
+	newCost		= 1;
 	nhbrIDs		= [nhbrIDs; newNeighbour];
+	nhbrCosts	= [nhbrCosts; newCost];
 end
 
 if pointInGrid - obj.nGridRow >= 1
 	% pointInGrid - obj.nGridRow is a neighbour
 	newNeighbour= (pointInGrid - obj.nGridRow) + obj.nPoints * (pointinTime + 1);
+	newCost		= 1;
 	nhbrIDs		= [nhbrIDs; newNeighbour];
+	nhbrCosts	= [nhbrCosts; newCost];
 end
 
 

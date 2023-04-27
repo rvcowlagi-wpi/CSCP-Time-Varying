@@ -65,19 +65,23 @@ threat_			= ParametricThreat(N_THREAT_STATE, ...
 sensor_		    = SensorNetworkV01(N_SENSORS, ...
 	             SENSOR_NOISE_VAR, threat_, grid_);
 
+grid_.threatModel	= threat_;
+
 %----- Storage for results at each iteration
 timeStampMeas	= zeros(1, N_EXP_ITER);
 measurementz	= zeros(N_SENSORS, N_EXP_ITER);
-planState		= zeros(N_GRID_ROW^2, N_EXP_ITER);		% Planned path
-planCostRisk	= zeros(2, N_EXP_ITER);					% Expected cost and risk
-
-
+planState		= zeros(N_GRID_ROW^2, N_EXP_ITER);							% Planned path
+planCostRisk	= zeros(2, N_EXP_ITER);										% Expected cost and risk
 
 %% CSCP Loop
 while (1)
 	%----- Increment iteration counter
 	k	   = k + 1;
 	time_k = time_k + time_step_;
+
+	%----- Update
+	sensor_.threatModel = threat_;
+	grid_.threatModel	= threat_;
 
 	%----- Configure sensors
 	sensor_			= sensor_.configure([]);
@@ -89,16 +93,19 @@ while (1)
 
     %----- Simulate sensor measurements
 	measNoise_k		= sqrt(SENSOR_NOISE_VAR) * randn( N_SENSORS, 1);
-	measurementz_k	= trueThreat_k + measNoise_k;	% Pointwise measurement of threat
+	measurementz_k	= trueThreat_k + measNoise_k;							% Pointwise measurement of threat
 
 	%----- Run estimator
 	threat_			 = threat_.estimate_state_UKF(time_step_, measurementz_k, sensor_);
     threatStateHat_k = threat_.stateEstimate;
 	
     %----- Find optimal plan
-% 	grid_			= grid_.plan_path(threat_);
-% 	planState_k		= grid_.optimalPath;
-% 	planCostRisk_k	= [grid_.pathCost; grid_.pathRisk];
+	grid_.searchSetup.start			= 1 + k * grid_.nPoints;				% Planning start time is "now"
+	grid_.searchSetup.locationGoal	= grid_.nPoints + k * grid_.nPoints;
+
+	grid_			= grid_.min_cost_path();
+	planState_k		= grid_.optimalPath;
+	planCostRisk_k	= [grid_.pathCost; grid_.pathRisk];
 
 	%----- Store results of this iteration
 	timeStampMeas(:, k)		= time_k;

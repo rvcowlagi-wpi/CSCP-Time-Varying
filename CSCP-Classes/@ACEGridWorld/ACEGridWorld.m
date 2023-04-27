@@ -49,6 +49,13 @@ classdef ACEGridWorld
 		optimalPath
 		pathCost
 		pathRisk
+
+		searchSetup
+		searchOutcome		% label, backpointer, etc
+		
+		threatModel
+
+		find_neighbours
 	end
 
 	methods
@@ -95,6 +102,11 @@ classdef ACEGridWorld
 			obj.pathCost	= Inf;
 			obj.pathRisk	= Inf;
 
+			obj.searchSetup.start			= 0;
+			obj.searchSetup.goal_check		= @obj.location_goal_any_time;
+			obj.searchSetup.find_neighbours = @obj.grid_neighbours_without_wait;
+
+			obj.threatModel = [];
 		end
 		%------------------------------------------------------------------
 
@@ -105,6 +117,11 @@ classdef ACEGridWorld
 
 		%==================================================================
 		[nhbrID, nhbrCosts] = grid_neighbours_without_wait(obj, currentID)
+		% Neighbour discovery function in a separate file
+		%------------------------------------------------------------------
+
+		%==================================================================
+		isGoalClosed = goal_check_locationanytime(obj)
 		% Neighbour discovery function in a separate file
 		%------------------------------------------------------------------
 
