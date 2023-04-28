@@ -77,5 +77,12 @@ if pointInGrid - obj.nGridRow >= 1
 	nhbrCosts	= [nhbrCosts; newCost];
 end
 
+if pointInGrid == obj.searchSetup.locationGoal
+	newNeighbour= obj.virtualGoalID;
+	newCost		= 0;
+	nhbrIDs		= [nhbrIDs; newNeighbour];
+	nhbrCosts	= [nhbrCosts; newCost];
+end
+
 
 end

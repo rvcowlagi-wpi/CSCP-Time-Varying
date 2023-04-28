@@ -34,7 +34,7 @@ destination to be reached at any time.
 
 function isGoalClosed = goal_check_locationanytime(obj)
 
-isGoalKnown		= (idGoal(k) == knownVertices);
+
 
 if ~isAllGoalSearch
 		for k = 1:numel(idGoal)

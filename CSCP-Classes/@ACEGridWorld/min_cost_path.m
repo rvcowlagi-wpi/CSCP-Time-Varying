@@ -102,7 +102,7 @@ while (nFringe ~= 0) && (~isGoalClosed)
 		
 		if obj.searchOutcome(vNew).mk == 0											% Unvisited
 			obj.searchOutcome(vNew).mk	= 1;										% Mark open
-			obj.searchOutcome(vNew).d	= obj.searchOutcome(vCurrent).d + costNew;			% Update c2come of newly visited state
+			obj.searchOutcome(vNew).d	= obj.searchOutcome(vCurrent).d + costNew;	% Update c2come of newly visited state
 			obj.searchOutcome(vNew).b	= vCurrent;			
 
 			fringe_binary_sort([vNew obj.searchOutcome(vNew).d]);					% Add [vertexNew cost] to sorted open list
@@ -119,7 +119,11 @@ while (nFringe ~= 0) && (~isGoalClosed)
 		end
 	end
 	
-	isGoalClosed = obj.searchSetup.goal_check();
+	isGoalKnown	= (obj.virtualGoalID == knownVertices);
+	if any(isGoalKnown) && vertexData(isGoalKnown).mk == 2
+		isGoalClosed = 1;
+		break;
+	end
 
 end
 
