@@ -37,25 +37,33 @@ Reconfiguration function in class definition of sensor network:
 %}
 
 function obj = configure(obj, optimalPath)
-    numberCombination = nchoosek(obj.gridWorld.nPoints,obj.nSensors);
     sensorCombination = nchoosek(1:obj.gridWorld.nPoints,obj.nSensors);
-    mutualInformationHistory = [];
-    for   i     = 1:numberCombination
-          obj.allConfigurations	= sensorCombination(i,:);
-          H     = obj.calc_rbf_value(obj. allConfigurations);
-          pNext = obj.threatModel.pNext;
-          tau   = pNext * H';
-          E     = H * pNext*H' + obj.noiseVariance * eye(obj.nSensors);
-          mutualInformation = 0.5 * log(det(pNext)/(det(pNext - tau * pinv(E) * tau')));
-          mutualInformationHistory = cat(2, mutualInformationHistory,  mutualInformation);
-    end
-%         MI_arr(j,1) = i;
-%         MI_arr(j,2) = curr_mutualInformation;
-%         threatStateHat_k = threat_.stateEstimate;
-%     
-%         if curr_mutualInformation>max_mutualInf(:,1)
-%             max_mutualInf = [curr_mutualInformation, i];
-%         end
-%         j = j+1;
-end
+    numberCombination = numel((sensorCombination(:,1)));
+    mutualInformationHistory  = [];
+    mutualInformation_array   = zeros(1,obj.nSensors + 1);                 %[index, MI]
+    allConf_MI = [];                                                       % Array to store MI for all configurations
+    j     = 1;
 
+    for i = 1:numberCombination
+        possibleConfigurations	= sensorCombination(i,:);
+        H     = obj.calc_rbf_value(possibleConfigurations);
+        pNext = obj.threatModel.pNext;
+        tau   = pNext * H';
+        Xi     = H * pNext*H' + obj.noiseVariance * eye(obj.nSensors);
+        currentmutualInformation = 0.5 * log(det(pNext)/(det(pNext - tau * pinv(Xi) * tau')));
+        mutualInformationHistory = cat(2, mutualInformationHistory,  currentmutualInformation);
+
+        allConf_MI(j,1) = i;
+        allConf_MI(j,2) = currentmutualInformation;
+
+        if currentmutualInformation > mutualInformation_array(:,end)
+           mutualInformation_array(:,1:obj.nSensors) = sensorCombination(i,:);
+           mutualInformation_array(:,obj.nSensors +1) = currentmutualInformation;
+        end
+        j = j + 1;       
+    end
+    allConf_MI;
+    obj.configuration = mutualInformation_array(:, 1:obj.nSensors);
+    obj.configHistory = cat(2, obj.configHistory,  obj.configuration');
+
+end
