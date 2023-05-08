@@ -47,7 +47,7 @@ knownVertices	= zeros(nVertices, 1);
 % vertices also provides a **unique** identifier to each vertex. The main
 % difference from a typical Dijkstra implementation is that the vertex ID
 % (which can be large) need not match this algorithm's internal indexing,
-% which is helpful when the #vertices searched << total number of verices.
+% which is helpful when the #vertices searched << total number of vertices.
 obj.searchOutcome		= [];
 tmp	= struct('id', 0, 'mk', 0, 'd', Inf, 'b', [], 'x', []);
 obj.searchOutcome		= repmat(tmp, 1, nVertices);
@@ -119,19 +119,28 @@ while (nFringe ~= 0) && (~isGoalClosed)
 		end
 	end
 	
-	isGoalKnown	= (obj.virtualGoalID == knownVertices);
+	isGoalKnown	= (obj.searchSetup.virtualGoalID == knownVertices);
 	if any(isGoalKnown) && vertexData(isGoalKnown).mk == 2
 		isGoalClosed = 1;
-		break;
 	end
 
 end
 
 knownVertices = knownVertices(1:nKnownVertices);
 
+optimalPathvIndices = obj.searchSetup.virtualGoalID;
+isGoalKnown	= (obj.searchSetup.virtualGoalID == knownVertices);
+tmp2		= 1:nKnownVertices;
+vGoal		= tmp2(isGoalKnown);
+vCurrent	= vGoal;
+while (vCurrent ~= 1)
+	vCurrent	= vertex_data(indx_current).b;
+	optimalPathvIndices	= cat(2, v_known(indx_current), optimalPathvIndices);
+end
+optimalPathvIDs	= knownVertices(optimalPathvIndices);
+
 %----- Outputs
 obj.optimalPath = zeros(obj.nPoints, 1);
-obj.optimalPath(1:5) = 1:5;
 obj.pathCost	= 1;
 obj.pathRisk	= 2;
 

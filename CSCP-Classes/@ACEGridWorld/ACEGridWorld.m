@@ -102,9 +102,9 @@ classdef ACEGridWorld
 			obj.pathCost	= Inf;
 			obj.pathRisk	= Inf;
 
-			obj.searchSetup.start			= 0;
-			obj.searchSetup.goal_check		= @obj.location_goal_any_time;
+			obj.searchSetup.start			= [];
 			obj.searchSetup.find_neighbours = @obj.grid_neighbours_without_wait;
+			obj.searchSetup.virtualGoalID	= 0;
 
 			obj.threatModel = [];
 		end
