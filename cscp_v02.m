@@ -51,7 +51,7 @@ N_GRID_ROW		= 5;
 
 %----- Other
 N_EXP_ITER		= 1;	% Ballpark of how many CSCP iterations may be needed
-N_MAX_ITER		= 10;	% Terminate if this is exceeded
+N_MAX_ITER		= 1;	% Terminate if this is exceeded
 TERM_PLAN_RISK	= 0.1;	% Risk threshold for terminating CSCP iterations
 SENSOR_NOISE_VAR= 0.1;	% Variance of (i.i.d.) measurement noise in each sensor, assuming homogeneous sensors
 
@@ -101,7 +101,7 @@ while (1)
 	
     %----- Find optimal plan
 	grid_.searchSetup.start			= 1 + k * grid_.nPoints;				% Planning start time is "now"
-	grid_.searchSetup.locationGoal	= grid_.nPoints + k * grid_.nPoints;
+	grid_.searchSetup.locationGoal	= grid_.nPoints;
 
 	grid_			= grid_.min_cost_path();
 	planState_k		= grid_.optimalPath;

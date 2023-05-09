@@ -39,7 +39,7 @@ function obj = min_cost_path(obj)
 idStart			= obj.searchSetup.start;
 
 nVertices		= 1E3;														% For large graphs, initialize search data structure with arbitrary size
-knownVertices	= zeros(nVertices, 1);									
+knownIDs	= Inf(nVertices, 1);									
 % This is the list of known vertex IDs; the row number in this list is the
 % vertex number for that ID 
 
@@ -58,8 +58,8 @@ obj.searchOutcome(1).id	= idStart;
 obj.searchOutcome(1).mk = 1;
 obj.searchOutcome(1).d	= 0;
 
-nKnownVertices	= 1;
-knownVertices(1)= idStart;
+nKnownIDs	= 1;
+knownIDs(1)	= idStart;
 
 fringe_			= [1 0];
 nFringe			= 1;
@@ -67,38 +67,37 @@ nFringe			= 1;
 isGoalClosed	= 0;
 
 nIter	= 0;
-while (nFringe ~= 0) && (~isGoalClosed)
-% 	clc;
-% 	fprintf('Number of iterations  : %i\n', nIter);
-% 	fprintf('Number of OPEN vertexs  : %i\n', nOpen);
-% 	fprintf('Number of known vertexs : %i\n\n', nKnownvertexs);
-	
+while (nFringe ~= 0) && (~isGoalClosed)	
 	nIter		= nIter + 1;
 	vCurrent	= fringe_(1, 1);											% Get vertex from top of (sorted) open stack
 	obj.searchOutcome(vCurrent).mk = 2;											% Mark that vertex as dead
 	
 	nFringe		= nFringe - 1;
 	fringe_(1, :) = [];	
-														
-	[nhbrIDs, nhbrCosts] = obj.searchSetup.find_neighbours(obj.searchOutcome(vCurrent).id);				% Other function handle for nhbrs and costs
+
+	[nhbrIDs, nhbrCosts] = obj.find_neighbours(obj.searchOutcome(vCurrent).id);				% Other function handle for nhbrs and costs
+
+	fprintf('\n-- Iteration: %i \n', nIter)
 	
 	for k = 1:numel(nhbrIDs)													% For all neighbours
 
-		if any(nhbrIDs(k) == knownVertices(1:nKnownVertices))
-			tmp2		= 1:nKnownVertices;
-			vneighbour	= tmp2(nhbrIDs(k) == knownVertices(1:nKnownVertices));
+		if any(nhbrIDs(k) == knownIDs(1:nKnownIDs))
+			tmp2		= 1:nKnownIDs;
+			vneighbour	= tmp2(nhbrIDs(k) == knownIDs(1:nKnownIDs));
 			vNew		= vneighbour;
 		else
-			vNew		= nKnownVertices + 1;
+			vNew		= nKnownIDs + 1;
 			obj.searchOutcome(vNew).id	= nhbrIDs(k);
 			obj.searchOutcome(vNew).mk	= 0;
 			
-			nKnownVertices		= vNew;
-			knownVertices(vNew)	= nhbrIDs(k);	
+			nKnownIDs		= vNew;
+			knownIDs(vNew)	= nhbrIDs(k);	
 		end
 		costNew	= nhbrCosts(k);												% Cost to go from act to new
-		
-% 		[v_current v_new cost_new]
+
+		disp([k vCurrent vNew])
+		fprintf('\n-- Known IDs --\n')
+		disp((knownIDs(1:nKnownIDs))')
 		
 		if obj.searchOutcome(vNew).mk == 0											% Unvisited
 			obj.searchOutcome(vNew).mk	= 1;										% Mark open
@@ -117,30 +116,40 @@ while (nFringe ~= 0) && (~isGoalClosed)
 				fringe_binary_sort([vNew obj.searchOutcome(vNew).d]);				% Add [vertexNew cost] to sorted open list
 			end
 		end
+
+
+		
 	end
 	
-	isGoalKnown	= (obj.searchSetup.virtualGoalID == knownVertices);
-	if any(isGoalKnown) && vertexData(isGoalKnown).mk == 2
+	isGoalKnown	= (obj.searchSetup.virtualGoalID == knownIDs);
+	if any(isGoalKnown) && obj.searchOutcome(isGoalKnown).mk == 2
 		isGoalClosed = 1;
 	end
 
 end
 
-knownVertices = knownVertices(1:nKnownVertices);
+knownIDs = knownIDs(1:nKnownIDs);
 
-optimalPathvIndices = obj.searchSetup.virtualGoalID;
-isGoalKnown	= (obj.searchSetup.virtualGoalID == knownVertices);
-tmp2		= 1:nKnownVertices;
+optimalPathIDs = obj.searchSetup.virtualGoalID;
+isGoalKnown	= (obj.searchSetup.virtualGoalID == knownIDs);
+tmp2		= 1:nKnownIDs;
 vGoal		= tmp2(isGoalKnown);
 vCurrent	= vGoal;
 while (vCurrent ~= 1)
-	vCurrent	= vertex_data(indx_current).b;
-	optimalPathvIndices	= cat(2, v_known(indx_current), optimalPathvIndices);
+	vCurrent	= obj.searchOutcome(vCurrent).b;
+	optimalPathIDs	= cat(2, knownIDs(vCurrent), optimalPathIDs);
 end
-optimalPathvIDs	= knownVertices(optimalPathvIndices);
+optimalPathIDs
+pathPointsInGrid = mod(optimalPathIDs, obj.nPoints);
+pathPointsInGrid(pathPointsInGrid == 0) = obj.nPoints;
+pathPointsInTime = floor(optimalPathIDs / obj.nPoints );
+
+pathPointsInGrid
+pathPointsInTime
+
 
 %----- Outputs
-obj.optimalPath = zeros(obj.nPoints, 1);
+obj.optimalPath.IDs			= optimalPathIDs;
 obj.pathCost	= 1;
 obj.pathRisk	= 2;
 

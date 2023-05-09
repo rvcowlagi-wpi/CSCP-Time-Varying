@@ -54,8 +54,6 @@ classdef ACEGridWorld
 		searchOutcome		% label, backpointer, etc
 		
 		threatModel
-
-		find_neighbours
 	end
 
 	methods
@@ -98,12 +96,12 @@ classdef ACEGridWorld
 			obj.adjacency = sparse(edgeList(1:nEdges, 1), ...
 				edgeList(1:nEdges, 2), edgeList(1:nEdges, 3));
 
-			obj.optimalPath = zeros(obj.nPoints, 1);
+			obj.optimalPath = [];
 			obj.pathCost	= Inf;
 			obj.pathRisk	= Inf;
 
 			obj.searchSetup.start			= [];
-			obj.searchSetup.find_neighbours = @obj.grid_neighbours_without_wait;
+			obj.searchSetup.locationGoal	= obj.nPoints;
 			obj.searchSetup.virtualGoalID	= 0;
 
 			obj.threatModel = [];
@@ -116,7 +114,9 @@ classdef ACEGridWorld
 		%------------------------------------------------------------------
 
 		%==================================================================
-		[nhbrID, nhbrCosts] = grid_neighbours_without_wait(obj, currentID)
+		function [nhbrIDs, nhbrCosts] = find_neighbours(obj, currentID)
+			[nhbrIDs, nhbrCosts] = grid_neighbours_without_wait(obj, currentID);
+		end
 		% Neighbour discovery function in a separate file
 		%------------------------------------------------------------------
 
