@@ -95,9 +95,9 @@ while (nFringe ~= 0) && (~isGoalClosed)
 		end
 		costNew	= nhbrCosts(k);												% Cost to go from act to new
 
-		disp([k vCurrent vNew])
-		fprintf('\n-- Known IDs --\n')
-		disp((knownIDs(1:nKnownIDs))')
+% 		disp([k vCurrent vNew])
+% 		fprintf('\n-- Known IDs --\n')
+% 		disp((knownIDs(1:nKnownIDs))')
 		
 		if obj.searchOutcome(vNew).mk == 0											% Unvisited
 			obj.searchOutcome(vNew).mk	= 1;										% Mark open
