@@ -140,16 +140,20 @@ while (vCurrent ~= 1)
 	optimalPathIDs	= cat(2, knownIDs(vCurrent), optimalPathIDs);
 end
 optimalPathIDs
+
+optimalPathIDs(end) = [];
 pathPointsInGrid = mod(optimalPathIDs, obj.nPoints);
 pathPointsInGrid(pathPointsInGrid == 0) = obj.nPoints;
-pathPointsInTime = floor(optimalPathIDs / obj.nPoints );
+pathPointsInTime = floor( (optimalPathIDs - pathPointsInGrid) / obj.nPoints );
 
 pathPointsInGrid
 pathPointsInTime
 
 
 %----- Outputs
-obj.optimalPath.IDs			= optimalPathIDs;
+obj.optimalPath.IDs	= optimalPathIDs;
+obj.optimalPath.loc = pathPointsInGrid;
+obj.optimalPath.time= pathPointsInTime;
 obj.pathCost	= 1;
 obj.pathRisk	= 2;
 

@@ -44,7 +44,7 @@ nhbrCosts	= [];
 
 pointInGrid = mod(currentID, obj.nPoints);
 if pointInGrid == 0, pointInGrid = obj.nPoints; end
-pointinTime = floor(currentID / obj.nPoints );
+pointinTime = floor( (currentID - pointInGrid) / obj.nPoints );
 
 if mod( pointInGrid, obj.nGridRow )
 	% pointInGrid + 1 is a neighbour

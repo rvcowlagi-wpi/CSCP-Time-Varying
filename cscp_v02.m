@@ -41,8 +41,14 @@ addpath(genpath('CSCP-Classes'))
 %----- Time and iteration counters
 % Time counter: there can be multiple and possibly variable time steps per
 % iteration
-time_k	= 0;	
-k		= 0;	% Iteration counter
+time_	= 0;	
+ell_	= 0;	% CSCP iteration counter
+
+%----- Various time steps / windows
+DT_COMPUTE	= 0.01;			% Smallest time step, computations happen at multiples of these
+DT_MEASURE	= 0.1;			% Measurement collection time window
+DT_PLAN		= 0.2;			% Planning time window
+DT_CONFIGURE= 0.2;			% Sensor configuration time window
 
 %----- Problem dimensions
 N_THREAT_STATE	= 9;			
@@ -76,15 +82,17 @@ planCostRisk	= zeros(2, N_EXP_ITER);										% Expected cost and risk
 %% CSCP Loop
 while (1)
 	%----- Increment iteration counter
-	k	   = k + 1;
-	time_k = time_k + time_step_;
+	ell_	= ell_ + 1;
+	time_	= time_ + DT_COMPUTE;
 
 	%----- Update
 	sensor_.threatModel = threat_;
 	grid_.threatModel	= threat_;
 
 	%----- Configure sensors
-	sensor_			= sensor_.configure([]);
+	if isConfigurationWindow
+		sensor_		= sensor_.configure([]);
+	end
    
     %----- Propagate true threat
 	threat_			= threat_.dynamics_discrete(time_step_);
@@ -92,24 +100,28 @@ while (1)
 		grid_.coordinates(:, sensor_.configuration) );
 
     %----- Simulate sensor measurements
-	measNoise_k		= sqrt(SENSOR_NOISE_VAR) * randn( N_SENSORS, 1);
-	measurementz_k	= trueThreat_k + measNoise_k;							% Pointwise measurement of threat
+	if isMeasurementWindow
+		measNoise_k		= sqrt(SENSOR_NOISE_VAR) * randn( N_SENSORS, 1);
+		measurementz_k	= trueThreat_k + measNoise_k;						% Pointwise measurement of threat
+	end
 
 	%----- Run estimator
 	threat_			 = threat_.estimate_state_UKF(time_step_, measurementz_k, sensor_);
     threatStateHat_k = threat_.stateEstimate;
 	
     %----- Find optimal plan
-	grid_.searchSetup.start			= 1 + k * grid_.nPoints;				% Planning start time is "now"
-	grid_.searchSetup.locationGoal	= grid_.nPoints;
+	if isPlanningWindow
+		grid_.searchSetup.start			= 1 + ell_ * grid_.nPoints;			% Planning start time is "now"
+		grid_.searchSetup.locationGoal	= grid_.nPoints;
+	end
 
 	grid_			= grid_.min_cost_path();
 	planState_k		= grid_.optimalPath;
 	planCostRisk_k	= [grid_.pathCost; grid_.pathRisk];
 
 	%----- Store results of this iteration
-	timeStampMeas(:, k)		= time_k;
-	measurementz(:, k)		= measurementz_k;
+	timeStampMeas(:, ell_)		= time_;
+	measurementz(:, ell_)		= measurementz_k;
 % 	planState(:, k)			= planState_k;
 % 	planCostRisk(:, k)		= planCostRisk_k;
    
@@ -117,7 +129,7 @@ while (1)
 % 	threat_			 = threat_.estimate_state_UKF1(time_step_, sensor_);
 	
 	%----- Check termination criteration and break
-	if (grid_.pathRisk <= TERM_PLAN_RISK) || (k >= N_MAX_ITER), break; end
+	if (grid_.pathRisk <= TERM_PLAN_RISK) || (ell_ >= N_MAX_ITER), break; end
 end
 
 %% Plot results
@@ -130,4 +142,6 @@ end
 flags_.SHOW_TRUE	= true;
 flags_.SHOW_ESTIMATE= false;
 flags_.JUXTAPOSE	= true;
+flags_.SHOW_PATH	= true;
+flags_.DUAL_SCREEN	= true;
 grid_.plot_parametric(threat_, sensor_, flags_)
