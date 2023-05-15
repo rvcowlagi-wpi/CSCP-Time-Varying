@@ -34,11 +34,10 @@ neighbours and assigns vertex numbers as they are discovered.
 
 function obj = min_cost_path(obj)
 
-
 %------ Initialization
-idStart			= obj.searchSetup.start;
+idStart		= obj.searchSetup.start;
 
-nVertices		= 1E3;														% For large graphs, initialize search data structure with arbitrary size
+nVertices	= 1E3;														% For large graphs, initialize search data structure with arbitrary size
 knownIDs	= Inf(nVertices, 1);									
 % This is the list of known vertex IDs; the row number in this list is the
 % vertex number for that ID 

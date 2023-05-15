@@ -95,7 +95,7 @@ while (1)
 	end
    
     %----- Propagate true threat
-	threat_			= threat_.dynamics_discrete(time_step_);
+	threat_			= threat_.dynamics_discrete(DT_COMPUTE);
 	trueThreat_k	= threat_.calculate_at_locations( ...
 		grid_.coordinates(:, sensor_.configuration) );
 
@@ -106,7 +106,7 @@ while (1)
 	end
 
 	%----- Run estimator
-	threat_			 = threat_.estimate_state_UKF(time_step_, measurementz_k, sensor_);
+	threat_			 = threat_.estimate_state_UKF(DT_COMPUTE, measurementz_k, sensor_);
     threatStateHat_k = threat_.stateEstimate;
 	
     %----- Find optimal plan
