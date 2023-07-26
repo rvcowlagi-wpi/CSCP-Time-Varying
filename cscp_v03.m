@@ -46,12 +46,12 @@ k		= 0;	% Iteration counter
 
 %----- Problem dimensions
 N_THREAT_STATE	= 9;			
-N_SENSORS		= 4;
+N_SENSORS		= 1;
 N_GRID_ROW		= 5;
 
 %----- Other
-N_EXP_ITER		= 2;	% Ballpark of how many CSCP iterations may be needed
-N_MAX_ITER		= 2;	% Terminate if this is exceeded
+N_EXP_ITER		= 20;	% Ballpark of how many CSCP iterations may be needed
+N_MAX_ITER		= 20;	% Terminate if this is exceeded
 TERM_PLAN_RISK	= 0.1;	% Risk threshold for terminating CSCP iterations
 SENSOR_NOISE_VAR= 0.1;	% Variance of (i.i.d.) measurement noise in each sensor, assuming homogeneous sensors
 
@@ -70,39 +70,67 @@ measurementz	= zeros(N_SENSORS, N_EXP_ITER);
 planState		= zeros(N_GRID_ROW^2, N_EXP_ITER);		% Planned path
 planCostRisk	= zeros(2, N_EXP_ITER);					% Expected cost and risk
 
-% optimalPath  = [1 21 22 42 43 63 64 84 104 124 144 164 184 204 224 244 264 284 304 324 325 326 327 328 329 330 331 332 333 334 335 336 337 338 339 340 360 380 400];
+%optimalPath_  = [1 2 11 12 21 30 31 40 41 50 59 60 61 70];
+%optimalPath_  = [1 2 11 12 21 30 31 40 41 42 43 45];
 
+% optimalPath_  = [1 2 7 8 13 18 19 24 25];
+% optimalPath_  = [21 22 17 18 13 14 9 10 5];
+
+% path_length = length(optimalPath);
+% path_pnext = zeros(9, 9, path_length);
 
 %% CSCP Loop
 while (1)
 	%----- Increment iteration counter
 	k	   = k + 1;
 	time_k = time_k + time_step_;
+    
+    grid_.optimalPath
+%     grid_.pathCost
 
-%     optimalPath  = [1 2 7 8 13 18 19 24 25];
-%     optimalPath  = [21 22 17 18 13 14 9 10 5];
+    grid_ = grid_.min_cost_path();
+    optimalPath_ = grid_.optimalPath.loc;
+    
    
 	%----- Configure sensors
     sensor_.threatModel = threat_;
-	sensor_			= sensor_.configure([]);
-   
+	sensor_			= sensor_.configure1(optimalPath_);
+    
+    grid_.pathCost = sensor_.estimatedpathCost;
+    grid_.pathRisk = sensor_.pathRisk;
+%     current_sens_conf = sensor_.configuration; % save the current sensor config
+
     %----- Propagate true threat
-	threat_			= threat_.dynamics_discrete(time_step_);
-	trueThreat_k	= threat_.calculate_at_locations( ...
-		grid_.coordinates(:, sensor_.configuration) );
-
+    threat_			= threat_.dynamics_discrete(time_step_);
+    trueThreat_k	= threat_.calculate_at_locations( ...
+	grid_.coordinates(:, sensor_.configuration) );
+   
+    
+    
     %----- Simulate sensor measurements
-	measNoise_k		= sqrt(SENSOR_NOISE_VAR) * randn( N_SENSORS, 1);
-	measurementz_k	= trueThreat_k + measNoise_k;	% Pointwise measurement of threat
+    measNoise_k		= sqrt(SENSOR_NOISE_VAR) * randn( N_SENSORS, 1);
+    measurementz_k	= trueThreat_k + measNoise_k;	% Pointwise measurement of threat
 
-	%----- Run estimator
-	threat_			 = threat_.estimate_state_UKF(time_step_, measurementz_k, sensor_);
+    %----- Run estimator
+    threat_			 = threat_.estimate_state_UKF1(time_step_, measurementz_k, sensor_, optimalPath_);
     threatStateHat_k = threat_.stateEstimate;
+    pathPnext = threat_.pNextHist;
+
+    grid_.threatModel = threat_;
+
+%     current_sens_conf;
+%     pathPnext;
 	
     %----- Find optimal plan
 % 	grid_			= grid_.plan_path(threat_);
 % 	planState_k		= grid_.optimalPath;
 % 	planCostRisk_k	= [grid_.pathCost; grid_.pathRisk];
+%     grid_.optimalPath
+%     grid_ = grid_.min_cost_path();
+%     optimalPath_ = grid_.optimalPath.loc;
+    
+%     grid_.path
+
 
 	%----- Store results of this iteration
 	timeStampMeas(:, k)		= time_k;
@@ -121,8 +149,14 @@ flags_.SHOW_ESTIMATE = true;
 threatStatePlotAxes  = threat_.plot_(flags_);
 
 
-flags_.SHOW_TRUE	= true;
-flags_.SHOW_ESTIMATE= false;
-flags_.JUXTAPOSE	= true;
+flags_.SHOW_TRUE	 = true;
+flags_.SHOW_ESTIMATE = false;
+flags_.DUAL_SCREEN	 = false;
+flags_.JUXTAPOSE	 = true;
+flags_.SHOW_PATH     = true;
 grid_.plot_parametric(threat_, sensor_, flags_)
 grid_.plot_grid_elements(threat_, sensor_, flags_)
+
+flags_.SHOW_TRUECOST	 = true;
+flags_.SHOW_ESTIMATECOST = true;
+pathCostPlotAxes  = sensor_.plotCost_(flags_);
