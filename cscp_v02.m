@@ -46,12 +46,12 @@ k		= 0;	% Iteration counter
 
 %----- Problem dimensions
 N_THREAT_STATE	= 9;			
-N_SENSORS		= 1;
+N_SENSORS		= 2;
 N_GRID_ROW		= 5;
 
 %----- Other
-N_EXP_ITER		= 1;	% Ballpark of how many CSCP iterations may be needed
-N_MAX_ITER		= 10;	% Terminate if this is exceeded
+N_EXP_ITER		= 2;	% Ballpark of how many CSCP iterations may be needed
+N_MAX_ITER		= 2;	% Terminate if this is exceeded
 TERM_PLAN_RISK	= 0.1;	% Risk threshold for terminating CSCP iterations
 SENSOR_NOISE_VAR= 0.1;	% Variance of (i.i.d.) measurement noise in each sensor, assuming homogeneous sensors
 
@@ -61,7 +61,6 @@ time_step_		= 0.1; % ** THIS MAY CHANGE DURING THE LOOP; FIX LATER
 grid_			= ACEGridWorld(1, N_GRID_ROW);
 threat_			= ParametricThreat(N_THREAT_STATE, ...
 	grid_.halfWorkspaceSize, SENSOR_NOISE_VAR, grid_);
-% threat_         = threat_.estimate_state_UKF1(time_step_,);
 sensor_		    = SensorNetworkV01(N_SENSORS, ...
 	             SENSOR_NOISE_VAR, threat_, grid_);
 
@@ -71,7 +70,7 @@ measurementz	= zeros(N_SENSORS, N_EXP_ITER);
 planState		= zeros(N_GRID_ROW^2, N_EXP_ITER);		% Planned path
 planCostRisk	= zeros(2, N_EXP_ITER);					% Expected cost and risk
 
-
+% optimalPath  = [1 21 22 42 43 63 64 84 104 124 144 164 184 204 224 244 264 284 304 324 325 326 327 328 329 330 331 332 333 334 335 336 337 338 339 340 360 380 400];
 
 %% CSCP Loop
 while (1)
@@ -79,9 +78,13 @@ while (1)
 	k	   = k + 1;
 	time_k = time_k + time_step_;
 
-	%----- Configure sensors
-	sensor_			= sensor_.configure([]);
+%     optimalPath  = [1 2 7 8 13 18 19 24 25];
+%     optimalPath  = [21 22 17 18 13 14 9 10 5];
    
+	%----- Configure sensors
+    sensor_.threatModel = threat_;
+	sensor_			= sensor_.configure([]);
+
     %----- Propagate true threat
 	threat_			= threat_.dynamics_discrete(time_step_);
 	trueThreat_k	= threat_.calculate_at_locations( ...
@@ -105,22 +108,20 @@ while (1)
 	measurementz(:, k)		= measurementz_k;
 % 	planState(:, k)			= planState_k;
 % 	planCostRisk(:, k)		= planCostRisk_k;
-   
-    %----- Run estimator
-% 	threat_			 = threat_.estimate_state_UKF1(time_step_, sensor_);
-	
+
 	%----- Check termination criteration and break
 	if (grid_.pathRisk <= TERM_PLAN_RISK) || (k >= N_MAX_ITER), break; end
 end
 
 %% Plot results
 
-% flags_.SHOW_TRUE	 = true;
-% flags_.SHOW_ESTIMATE = true;
-% threatStatePlotAxes  = threat_.plot_(flags_);
+flags_.SHOW_TRUE	 = true;
+flags_.SHOW_ESTIMATE = true;
+threatStatePlotAxes  = threat_.plot_(flags_);
 
 
 flags_.SHOW_TRUE	= true;
 flags_.SHOW_ESTIMATE= false;
 flags_.JUXTAPOSE	= true;
 grid_.plot_parametric(threat_, sensor_, flags_)
+grid_.plot_grid_elements(threat_, sensor_, flags_)
