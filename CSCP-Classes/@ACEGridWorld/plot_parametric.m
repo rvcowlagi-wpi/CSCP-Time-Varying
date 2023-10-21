@@ -1,18 +1,28 @@
-function plot_parametric(obj, threat_, sensor_, flags_)
+function plot_parametric(obj, threat_, flags_)
+
+if flags_.DUAL_SCREEN
+	figXOffset = 0.6;
+else
+	figXOffset = 0;
+end
 
 if flags_.SHOW_TRUE && flags_.SHOW_ESTIMATE
 	if flags_.JUXTAPOSE
-		figure('Name', 'True', 'Units','normalized', 'Position', [0.3 0.1 0.3*[1.8 1.6]]);
+		figure('Name', 'True', 'Units','normalized', ...
+			'Position', [figXOffset + 0.3 0.1 0.3*[1.8 1.6]]);
 		axisTrue= subplot(1,2,1);
 		axisEst	= subplot(1,2,2);
 	else
-		figure('Name', 'True', 'Units','normalized', 'Position', [0.7 0.1 0.25*[0.9 1.6]]);
+		figure('Name', 'True', 'Units','normalized', ...
+			'Position', [figXOffset + 0.7 0.1 0.25*[0.9 1.6]]);
 		axisTrue= gca;
-		figure('Name', 'Estimate', 'Units','normalized', 'Position', [0.7 0.4 0.25*[0.9 1.6]]);
+		figure('Name', 'Estimate', 'Units','normalized', ...
+			'Position', [figXOffset + 0.7 0.4 0.25*[0.9 1.6]]);
 		axisEst	= gca;
 	end
 else
-	figure('Name', 'True', 'Units','normalized', 'Position', [0.6 0.1 0.25*[0.9 1.6]]);
+	figure('Name', 'True', 'Units','normalized', ...
+		'Position', [figXOffset + 0.6 0.1 0.25*[0.9 1.6]]);
 	if flags_.SHOW_TRUE
 		axisTrue= gca;
 	elseif flags_.SHOW_ESTIMATE
@@ -27,6 +37,7 @@ yGridPlot		= linspace(-obj.halfWorkspaceSize, obj.halfWorkspaceSize, nPlotPts);
 locationsMesh(:, :, 1) = xMesh;
 locationsMesh(:, :, 2) = yMesh;
 
+
 if flags_.SHOW_TRUE
 	threatMesh	= threat_.calculate_at_locations(...
 		locationsMesh, threat_.stateHistory(:, 1));
@@ -37,10 +48,10 @@ if flags_.SHOW_TRUE
 	grHdlSurf	= surfc(axisTrue, xMesh, yMesh, threatMesh,'LineStyle','none');
 	clim(imageClims); colorbar; view(2);
 	axis equal; axis tight; hold on;
-	set(gca, 'Color', '#E0E0E0')
+	set(gca, 'Color', '#D0D0D0')
 
-	xlim(1.05*[-obj.halfWorkspaceSize, obj.halfWorkspaceSize]); 
-	ylim(1.05*[-obj.halfWorkspaceSize, 1.45*obj.halfWorkspaceSize]);
+	xlim(1.2*[-obj.halfWorkspaceSize, obj.halfWorkspaceSize]); 
+	ylim(1.2*[-obj.halfWorkspaceSize, 1.15*obj.halfWorkspaceSize]);
 	zlim(imageClims);
 	
 	timeText = ['$t = $ ' num2str(0) ' units'];
@@ -67,27 +78,75 @@ if flags_.SHOW_TRUE
 			'FontSize', 12, 'Interpreter','latex')
 	end
 
+	%----- Placeholders
+	grHdlPath		= plot(0,0);
+	grHdlPathText	= plot(0,0);
+
 	drawnow();
 
-	for m1 = 2:length(threat_.timeStampState)
+	for m1 = 1:length(threat_.timeStampState)
 		delete(grHdlSurf);
 		delete(grHdlTimeText);
+		delete(grHdlPath);
+		delete(grHdlPathText);
 
 		%----- Plot threat field as a surface
 		threatMesh	= threat_.calculate_at_locations(...
-			locationsMesh, threat_.stateHistory(:, m1));
+			locationsMesh, threat_.stateEstimateHistory(:, m1));
 		surfc(axisTrue, xMesh, yMesh, threatMesh,'LineStyle','none');
 		hold on;
 
-
-
 		%----- Indicate time step
-		timeText = ['$t = $ ' num2str(threat_.timeStampState(m1)) ' units'];
+		timeText = ['$t = $ ' num2str(threat_.timeStampState(m1))]; % ' units'];
 		grHdlTimeText	= text(axisTrue, ...
-			-0.98*obj.halfWorkspaceSize, 1.3*obj.halfWorkspaceSize, 2*imageMax, timeText, ...
+			-1.15*obj.halfWorkspaceSize, 1.25*obj.halfWorkspaceSize, ...
+			2*imageMax, timeText, ...
 			'Color', 'k', 'FontName', 'Times New Roman', ...
 			'FontSize', 12, 'Interpreter','latex');
 
+		%----- Indicate path cost and risk
+        obj.pathCost
+		pathText = ['$\hat{J}(\textbf{v}^*) = $ ' num2str(obj.pathCost) ',\quad' ...
+			'$\rho(\textbf{v}^*) = $ ' num2str(obj.pathRisk)];
+		grHdlPathText	= text(axisTrue, ...
+			-0.65*obj.halfWorkspaceSize, 1.25*obj.halfWorkspaceSize, ...
+			2*imageMax, pathText, ...
+			'Color', 'k', 'FontName', 'Times New Roman', ...
+			'FontSize', 12, 'Interpreter','latex');
+
+		%----- Plot path if desired
+		if flags_.SHOW_PATH
+			grHdlPath = plot3(...
+				obj.coordinates(1, obj.optimalPath.loc), ...
+				obj.coordinates(2, obj.optimalPath.loc), ...
+				imageMax*ones(1, 2*obj.nGridRow-1), ...
+				'o', 'Color', 'r', 'MarkerSize', 15, 'LineWidth', 1.5);
+        end
+
+        %----- Plot path if desired
+		if flags_.SHOW_SENSOR_LOCATION
+			    plot3(...
+				obj.coordinates(1, obj.sensorNetwork.configHistory(:,end)), ...
+				obj.coordinates(2, obj.sensorNetwork.configHistory(:,end)), ...
+				imageMax*ones(1,obj.sensorNetwork.nSensors), ...
+				'o', 'Color', 'w', 'MarkerSize', 20, 'LineWidth', 1.5);
+		end
+
+
 		drawnow();
-	end
+    end
+
+nPlotPts		= threat_.nStates;
+xGridPlot		= linspace(-obj.halfWorkspaceSize, obj.halfWorkspaceSize, nPlotPts);
+yGridPlot		= linspace(-obj.halfWorkspaceSize, obj.halfWorkspaceSize, nPlotPts);
+[xMesh, yMesh]	= meshgrid(xGridPlot, yGridPlot);
+
+
+   if flags_.SHOW_TRUE
+%    for m1 = 1:length(threat_.timeStampState)
+     
+   image(reshape(threat_.estimateCovarPxx, threat_.nStates^2, 1), 'CDataMapping','scaled')
+   colorbar
+   end
+
 end

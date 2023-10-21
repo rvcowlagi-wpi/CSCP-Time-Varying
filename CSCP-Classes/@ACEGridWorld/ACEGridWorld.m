@@ -47,8 +47,15 @@ classdef ACEGridWorld
 		adjacency			% xy adjacency matrix
 
 		optimalPath
+%         pathLength
 		pathCost
 		pathRisk
+        varpathCost
+		searchSetup
+		searchOutcome		% label, backpointer, etc
+		
+		threatModel
+        sensorNetwork
 	end
 
 	methods
@@ -91,26 +98,40 @@ classdef ACEGridWorld
 			obj.adjacency = sparse(edgeList(1:nEdges, 1), ...
 				edgeList(1:nEdges, 2), edgeList(1:nEdges, 3));
 
-			obj.optimalPath = zeros(obj.nPoints, 1);
+			obj.optimalPath = [];
 			obj.pathCost	= Inf;
 			obj.pathRisk	= Inf;
 
+			obj.searchSetup.start			= 1;
+			obj.searchSetup.locationGoal	= obj.nPoints;
+			obj.searchSetup.virtualGoalID	= 0;
+
+			obj.threatModel = [];
+            obj.sensorNetwork = [];
 		end
 		%------------------------------------------------------------------
-
 		%==================================================================
-		obj = min_cost_path(obj)
+		obj = min_cost_path(obj,threat_, grid_)
 		% Path optimization function in a separate file
 		%------------------------------------------------------------------
 
 		%==================================================================
-		[nhbrID, nhbrCosts] = grid_neighbours_without_wait(obj, currentID)
+		function [nhbrIDs, nhbrCosts] = find_neighbours(obj, currentID, threat_, grid_)
+			   [nhbrIDs, nhbrCosts] = grid_neighbours_without_wait(obj, currentID,threat_, grid_);
+		end
+		
+		%==================================================================
+		isGoalClosed = goal_check_locationanytime(obj)
 		% Neighbour discovery function in a separate file
 		%------------------------------------------------------------------
-
-		%==================================================================
-		plot_(obj, threat_, sensors_, threatState_, sensorConfig_, planState_, flags_)
-		% Path optimization function in a separate file
+        
+        plot_grid_elements(obj, threat_, flags_)
+        % Plot gridspace function in a separate file
 		%------------------------------------------------------------------
+
+        plot_parametric(obj, threat_, flags_)
+        % Plot grid and path function in a separate file
+		%------------------------------------------------------------------
+
 	end
 end

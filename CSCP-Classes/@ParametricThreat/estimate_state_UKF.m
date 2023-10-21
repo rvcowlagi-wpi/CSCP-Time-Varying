@@ -188,7 +188,7 @@ Xx_kkm1_next = bsxfun(@minus, Xx_kk, predx_kk);
 Pkk	= (weightW_c0 * Xx_kkm1_next(:, 1)) * Xx_kkm1_next(:, 1).' + ...
 	weightW_i * (Xx_kkm1_next(:, 2:end) * Xx_kkm1_next(:, 2:end).');
 
-obj.pNext = Pkk;   
+obj.pNext = Pkk; 
 
 	%========= SIGMA POINT CALCULATOR =====================================
 	function X_a_km1 = sigma_points(x_a_km1, P_a)

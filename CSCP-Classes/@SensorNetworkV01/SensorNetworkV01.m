@@ -47,8 +47,16 @@ classdef SensorNetworkV01
 
 		configuration	= [];	% sensor grid locations
 		configHistory	= [];	% grid location history
-        allConfigurations = []; % stores all possible configurations
-
+%         allConfigurations = []; % stores all possible configurations
+        truepathCost;
+        pathLength;
+        truepathCostHistory = [];
+        estimatedpathCost;
+        estimatedpathCostHistory = [];
+        varpathCost;
+        varpathCostHistory = [];
+        pathRisk;
+        pathRiskHistory = [];
 		identifiedBasis	= [];
 
 		gridWorld		= [];
@@ -63,6 +71,11 @@ classdef SensorNetworkV01
 		function obj = SensorNetworkV01(nSensors_, noiseVariance_, ...
 				threatModel_, gridWorld_)
 			% Initialization, including first configuration
+
+            obj.truepathCost = 0;
+            obj.truepathCostHistory = [];
+            obj.estimatedpathCost = 0;
+            obj.estimatedpathCostHistory = [];
 
 			% Set number of sensors
 			obj.nSensors		= nSensors_;
@@ -98,42 +111,48 @@ classdef SensorNetworkV01
 		end
 		%------------------------------------------------------------------
 	
-        %==================================================================
-        function observationH_ = calc_rbf_value(obj, configurations_)
+%         %==================================================================
+%         function observationH_ = calc_rbf_value(obj, configurations_)
+% 
+% 			% "locations_" is either:
+% 			%	2 x n vector, where each column has 2D position coordinates
+% 			%	OR
+% 			%	n x n x 2 array with meshgrid locations for 2D position	coords
+%             locations_	 = obj.gridWorld.coordinates(:, configurations_); 
+%             size(locations_);
+%             
+% 			if size(locations_, 3) > 1
+% 				nLocations		= numel(locations_(:, :, 1));
+% 				tmpX			= locations_(:, :, 1);
+% 				tmpY			= locations_(:, :, 2);
+% 				locationsFlatnd = [tmpX(:) tmpY(:)]';
+% 			else
+% 				nLocations		= size(locations_, 2);
+% 				locationsFlatnd	= locations_;
+% 			end
+% 			observationH_		= zeros(nLocations, obj.threatModel.nStates);
+% 
+% 		    for m1 = 1:nLocations					
+% 				locationVec_ = [locationsFlatnd(1, m1)*ones(1, obj.threatModel.nStates); ...
+% 					locationsFlatnd(2, m1)*ones(1, obj.threatModel.nStates)];
+% 			
+% 				observationH_(m1, :) = exp((-1 / (2 * obj.threatModel.basisSpread)) .* ...
+% 					((locationVec_(1, :) - obj.threatModel.basisCenter(1, :)).^2 + ...
+% 	 				(locationVec_(2, :) - obj.threatModel.basisCenter(2, :)).^2) );
+%                 
+%             end
+% 		end
+% 		%------------------------------------------------------------------
 
-			% "locations_" is either:
-			%	2 x n vector, where each column has 2D position coordinates
-			%	OR
-			%	n x n x 2 array with meshgrid locations for 2D position	coords
-            locations_	 = obj.gridWorld.coordinates(:, configurations_); 
-            
-			if size(locations_, 3) > 1
-				nLocations		= numel(locations_(:, :, 1));
-				tmpX			= locations_(:, :, 1);
-				tmpY			= locations_(:, :, 2);
-				locationsFlatnd = [tmpX(:) tmpY(:)]';
-			else
-				nLocations		= size(locations_, 2);
-				locationsFlatnd	= locations_;
-			end
-			observationH_		= zeros(nLocations, obj.threatModel.nStates);
-
-			for m1 = 1:nLocations					
-				locationVec_ = [locationsFlatnd(1, m1)*ones(1, obj.threatModel.nStates); ...
-					locationsFlatnd(2, m1)*ones(1, obj.threatModel.nStates)];
-			
-				observationH_(m1, :) = exp((-1 / (2 * obj.threatModel.basisSpread)) .* ...
-					((locationVec_(1, :) - obj.threatModel.basisCenter(1, :)).^2 + ...
-	 				(locationVec_(2, :) - obj.threatModel.basisCenter(2, :)).^2) );
-                
-			end
-		end
-		%------------------------------------------------------------------
 		%==================================================================
-		obj = configure(obj, optimalPath_)
+		obj = configure(obj,threat_, grid_, optimalPath, timestep)
 		% Sensor configuration implemented in a different file
 		%------------------------------------------------------------------
 
+        %==================================================================
+		obj = configure1(obj,threat_,grid_, optimalPath_, timestep)
+		% Sensor configuration implemented in a different file
+		%------------------------------------------------------------------
 
 		%==================================================================
 		function obj = identify_near_basis(obj)
@@ -180,5 +199,11 @@ classdef SensorNetworkV01
 			obj.identifiedBasis = unique(identifiableBases(nearestBases),'stable');
 		end
 		%------------------------------------------------------------------
+
+        %==================================================================
+		obj = plotCost_(obj, flags_)
+		% State and estimate plots in a different file
+		%------------------------------------------------------------------
 	end
 end
+

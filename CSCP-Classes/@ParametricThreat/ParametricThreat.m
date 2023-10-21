@@ -49,7 +49,9 @@ classdef ParametricThreat
 		estimateCovarPxx	% estimation error covariance
         traceCovarPxx       % trace of error covariance
         pNext                       % covariance prediction for next step
-       
+        pNextHist     % covariance prediction for all path_length iterations
+        pathLength
+
 		% Maintain histories of state and stateEstimate evolution
 		stateHistory
 		stateEstimateHistory		% mean state estimate
@@ -100,10 +102,49 @@ classdef ParametricThreat
 			basisSpread_	= influenceRange^2 / (2 * log(thetaGuess / sensorNoiseVar_));
 			obj.basisSpread	= basisSpread_;		% This is \sigma^2_\Psi
 			obj.offset		= 1;
-
-			exampleState	= [ 0    1    0; ...           % How the threats look visually
-								1    5    1; ...           % but, need to flip, transpose
-								0    1    0];
+% % 
+			exampleState	= [ 4    3    4   5   1; ...           % How the threats look visually
+								2    5    4   3   5; ...           % but, need to flip, transpose
+								6    5    3   5   4;
+                              4    2    4   2   3;
+                              1    5    3   5   4];
+%             exampleState	= [ 4    3    4   5   1   4   1; ...           % How the threats look visually
+% 								2    5    4   3   5   2   4; ...           % but, need to flip, transpose
+% 								6    5    3   5   4   3   3;
+%                               4    2    6   2   3   2   4;
+%                               6    5    3   5   4   3   5;
+%                               4    2    6   2   3   5   3;
+%                               1    5    3   5   4   3   4];
+%               exampleState	= [ 4    3    4   5   1    1; ...           % How the threats look visually
+% 								2    5    4   3   5    4; ...           % but, need to flip, transpose
+% 								6    5    3   5   4    3;
+%                               4    2    6   2   3    4;
+%                               6    5    3   5   4    5;                          
+%                               1    5    3   5   4    4];
+%             exampleState	=   [ 4    3    4   5   1   4   1   3; ...           % How the threats look visually
+% 								  2    5    4   3   5   2   4   3; ...           % but, need to flip, transpose
+% 								  6    5    3   5   4   3   3   2;
+%                                   4    2    6   2   3   2   4   1;
+%                                   6    5    3   5   4   3   5   1;                                 
+%                                   1    5    3   5   4   3   4   3;
+%                                   3    2    3   5   4   2   3   1;
+%                                   2    2    4   2   3   1   4   4];
+%             exampleState	= [ 4    3    4   5   1   4   1  4  3; ...           % How the threats look visually
+% 								2    5    4   3   5   2   4  2  3; ...           % but, need to flip, transpose
+% 								6    5    3   5   4   3   3  1  2;
+%                                 4    2    6   2   3   2   4  6  1;
+%                                 6    5    3   5   4   3   5  3  1;
+%                                 4    2    6   2   3   5   3  4  2;
+%                                 1    5    3   5   4   3   4  1  3;
+%                                 3    2    3   5   4   2   3  2  1;
+%                                 2    2    4   2   3   1   4  1  4];
+%             exampleState	= [ 3    6   1; ...           % How the threats look visually
+% 								3    5    2; ...           % but, need to flip, transpose
+%                                 1    3    3];
+%              exampleState	= [ 3    6   3   1; ...           % How the threats look visually
+% 								4    5   2   4; ...           % but, need to flip, transpose
+%                                 3    2    4   3
+%                                 1    5   2   4];
 			obj.state		= reshape(flipud(exampleState)', [obj.nStates, 1]);
 			obj.alfa		= 1e-3;
 
@@ -112,7 +153,7 @@ classdef ParametricThreat
 			obj.ACEGridWorld_= grid_;
 
 			obj.stateEstimate	 = zeros(nStates_, 1);
-			obj.estimateCovarPxx = eye(nStates_);
+			obj.estimateCovarPxx = 100 * eye(nStates_);
             obj.traceCovarPxx    = zeros(1,1);
 
 			obj.stateHistory			 = obj.state;
@@ -122,7 +163,9 @@ classdef ParametricThreat
 
 			obj.timeStampState			= 0;
 			obj.timeStampEstimate		= 0;
-            obj.pNext                   = 1.0075 * eye(nStates_,nStates_);
+            obj.pNext                   = 100 * eye(nStates_,nStates_);
+            obj.pNextHist               = repmat(100 * eye(nStates_),1,1,obj.ACEGridWorld_.nGridRow^2-1);
+%              obj.pathLength              = 9;
 %             obj.observationMatrix       = zeros(1,nStates_);
 		end
 		%---------------------------------------
@@ -201,7 +244,6 @@ classdef ParametricThreat
 			%	2 x n vector, where each column has 2D position coordinates
 			%	OR
 			%	n x n x 2 array with meshgrid locations for 2D position	coords
-            
 			if size(locations_, 3) > 1
 				nLocations		= numel(locations_(:, :, 1));
 				tmpX			= locations_(:, :, 1);
@@ -212,6 +254,7 @@ classdef ParametricThreat
 				locationsFlatnd	= locations_;
 			end
 			observationH_		= zeros(nLocations, obj.nStates);
+%             size(observationH_)
 
 			for m1 = 1:nLocations					
 				locationVec_ = [locationsFlatnd(1, m1)*ones(1, obj.nStates); ...
@@ -222,7 +265,9 @@ classdef ParametricThreat
 	 				(locationVec_(2, :) - obj.basisCenter(2, :)).^2) );
                 
 			end
-		end
+        
+        end
+        
 		%------------------------------------------------------------------
 
 		%==================================================================
@@ -255,12 +300,12 @@ classdef ParametricThreat
        
 
         %==================================================================
-		obj = estimate_state_UKF1(obj, time_step_, measurementz_k, sensors_)
+		obj = estimate_state_UKF1(obj, time_step_, measurementz_k, sensors_, optimalPath)
 		% Estimator in a separate file
 		%------------------------------------------------------------------
 
 		%==================================================================
-		obj = plot_(obj, flags_)
+		obj = plot_(obj,grid_, flags_)
 		% State and estimate plots in a different file
 		%------------------------------------------------------------------
 	end

@@ -1,4 +1,4 @@
-function plot_grid_elements(obj, threat_, sensor_, flags_)
+function plot_grid_elements(obj, threat_, flags_)
 
 if flags_.SHOW_TRUE && flags_.SHOW_ESTIMATE
 	if flags_.JUXTAPOSE
